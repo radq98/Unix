@@ -1,0 +1,78 @@
+#!/bin/bash
+
+function showMonit()
+{
+	echo "Blad!"
+	case $1 in
+	1) echo "Podano zbyt mala ilosc parametrow!" ;;
+	2) echo "Plik \"$2\": plik nie istnieje" ;;
+	3) echo "Brak praw do zapisu dla pliku zapisu" ;;
+	4) echo "Plik \"$2\": plik nie jest zwyklym plikiem" ;;
+	5) echo "Plik \"$2\": plik jest pusty" ;;
+	6) echo "Plik \"$2\": brak praw do odczytu" ;;
+	*) echo "Blad!" ;;
+	esac
+	
+	echo
+	echo "=============================== MANUAL ==============================="
+	echo
+	echo -e "\t polacz_pliki [DO_ZAPISU] [PLIK1] opcjonalnie: [PLIK2] ... [PLIKN]"
+	echo
+	echo "Skrypt scala wiele plikow w jeden."
+	echo -e "Podaj plik [DO_ZAPISU], do ktorego zostana scalone pozostale podane pliki."
+	echo -e "\a"
+	echo "[DO_ZAPISU] - musi istniec, miec prawo do zapisu, byc plikiem zwyklym"
+	echo "[PLIK1...n] - musi istniec, miec prawo do odczytu, byc plikiem zwyklym, niepustym"
+	echo "Skrypt calkowicie zamazuje plik [DO_ZAPISU] nowymi danymi!"
+	exit 1
+}
+
+
+echo "===========================  Scalanie plikow  ==========================="
+echo
+if [ -z $1 ] || [ -z $2 ];
+then
+	showMonit 1
+else
+	if [ -e $1 ]; then #czy plik zapisu istnieje
+		if [ -f $1 ]; then #czy plik zapisu jest zwykly
+			if [ -w $1 ]; then #czy plik zapisu ma prawa do zapisu
+				cat /dev/null > $1 2>/dev/null #czyszczenie pliku zapisu
+				for i in $@;
+				do
+				if [ $i != $1 ]; then
+					if [ -e $i ]; then #czy istnieje
+						if [ -f $i ]; then #czy zwykly
+							if [ -r $i ]; then #czy odczyt
+								if [ -s $i ]; then #czy niepusty
+									
+										cat $i >> $1 2>/dev/null
+									
+								else
+									showMonit 5 $i
+								fi
+							else
+								showMonit 6 $i
+							fi
+						else
+							showMonit 4 $i
+						fi
+					else
+						showMonit 2 $i
+					fi
+				fi
+				done
+				
+			else
+				showMonit 3
+			fi
+		else
+			showMonit 4 $1
+		fi
+	else
+		showMonit 2 $1
+	fi
+fi
+
+echo "Wykonano. Scalono wskazane pliki do pliku \"$1\""
+exit 0

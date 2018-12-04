@@ -1,0 +1,75 @@
+#!/bin/bash
+
+function showMonit()
+{
+	echo "Blad!"
+	case $1 in
+	1) echo "Podano zbyt mala ilosc parametrow!" ;;
+	2) echo "Podano zbyt wiele argumentow!" ;;
+	3) echo "Nieprawidlowa sciezka!" ;;
+	4) echo "Brak dostepu do pliku!" ;;
+	*) echo "Blad!" ;;
+	esac
+	
+	echo
+	echo "=============================== MANUAL ==============================="
+	echo
+	echo -e "\t wyczysc_dowiazania [SCIEZKA] [PLIK_ZAPISU]"
+	echo
+	echo "Skrypt usuwa dowiazania symboliczne we wskazanym katalogu."
+	echo -e "\a"
+	echo "[SCIEZKA] - sciezka do katalogu, w ktorym skrypt ma przeprowadzic operacje"
+	echo "[PLIK_ZAPISU] - plik, w ktorym skrypt stworzy liste skasowanych dowiazan"
+	exit 1
+}
+
+echo "===========================  Scalanie plikow  ==========================="
+echo
+if [ -z $1 ] || [ -z $2 ]; then
+	showMonit 1
+elif [ $# -ge 3 ]; then
+	showMonit 2
+else
+	ls $1 1>/dev/null 2>/dev/null
+	if [ $? != 0 ] || !([ -d $1 ]); then #sprawdzam czy katalog poprawny
+		showMonit 3;
+	else
+		if [ -e $2 ] && [ -f $2 ] && [ -w $2 ]; then #sprawdzam czy plik poprawny
+			echo "Plik \"$2\" istnieje!".
+			echo "Czy chcesz aby zostal nadpisany? T/N"
+			read choose
+			echo
+			if [ $choose == "t" ] || [ $choose == "T" ]; then
+				cat /dev/null > $2
+			else
+				echo "Przerywam prace..."
+				showMonit 4
+			fi
+		else
+			echo "Plik \"$2\" nie istnieje - zostanie utworzony."
+			touch $2
+			if [ $? != 0 ]; then
+				showMonit 4
+			fi
+		fi
+		
+		linksCount=$(find $1 -maxdepth 1 -type l | wc -l)
+		if [ $linksCount == 0 ]; then
+			echo "Katalog \"$1\" nie zawiera dowiazan symbolicznych."
+		else
+			for i in `seq $linksCount`; 
+			do
+				file=$(find $1 -maxdepth 1 -type l | head -$i | tail -1)
+				if [ -w $file ]; then
+					rm -i -v $file >> $2
+				else
+					echo "Brak dostepu do pliku \"$file\""
+				fi
+			done
+		fi
+	fi
+fi	
+
+echo "Wykonano. Lista skasowanych dowiazan znajduje sie w pliku \"$2\""
+exit 0	
+		

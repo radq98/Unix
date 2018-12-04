@@ -1,0 +1,72 @@
+#!/bin/bash
+
+function showMonit()
+{
+	echo "Blad!"
+	case $1 in
+	1) echo "Nie podano zadnego parametru!" ;;
+	2) echo "Podano bledny parametr." ;;
+	*) echo "Blad!" ;;
+	esac
+	
+	echo
+	echo "=============================== MANUAL ==============================="
+	echo
+	echo -e "\t user_konta [USERNAME1] opcjonalnie: [USERNAME2] ... [USERNAMEn]"
+	echo
+	echo -e "Wprowadz kolejne nazwy uzytkownikow, dla ktorych konta chcesz utworzyc."
+	echo -e "\a"
+	echo "Skrypt tworzy konta dla podanych nazw uzytkownikow oraz katalogi domowe."
+	echo "Automatycznie ustawia haslo takie samo, jak nazwa uzytkownika."
+	echo "Wlasciciel utworzonego konta bedzie zmuszony zmienic haslo przy pierwszym logowaniu"
+	exit 1
+}
+
+errorsCount=0
+successesCount=0
+
+echo "========================= Tworzenie kont uzytkownikow  ========================="
+echo
+if [ -z $1 ];
+then
+	showMonit 1
+else
+	for i in $@;
+	do
+		if [ -n "`echo $i | grep '^-'`" ] ;
+		then
+		 showMonit 2
+		 fi
+	done
+	
+	for i in $@;
+	do
+		userName=$i
+		
+		if [ -n "`grep "^$userName:" /etc/passwd`" ] ; 
+		then
+			((errorsCount+=1))
+			echo "Tworzenie \"$userName\": Blad! Uzytkownik o podanej nazwie juz istnieje!"
+		else
+			sudo adduser --disabled-login --gecos $userName --quiet $userName 2>/dev/null
+			x=$?
+			if [ $x = 1 ];
+			then
+				((errorsCount+=1))
+				echo "Tworzenie \"$userName\": Blad! Nieprawidlowa skladnia nazwy uzytkownika."
+			else
+				echo "$userName:$userName" | sudo chpasswd
+				sudo passwd -q -e $userName
+				
+				((successesCount+=1))
+				echo "Tworzenie \"$userName\": Utworzono."
+			fi
+		fi
+	done
+fi
+
+echo
+echo "Wykonano."
+echo "Utworzono $successesCount kont uzytkownikow."
+echo "Tworzenie $errorsCount kont zakonczylo sie niepowodzeniem."
+exit 0

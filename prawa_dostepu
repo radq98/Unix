@@ -1,0 +1,67 @@
+#!/bin/bash
+
+function showMonit()
+{
+	echo "Blad!"
+	case $1 in
+	1) echo "Podano zbyt mala ilosc parametrow!" ;;
+	2) echo "Parametr praw zawiera nieprawidlowe dane." ;;
+	*) echo "Blad!" ;;
+	esac
+	
+	echo
+	echo "=============================== MANUAL ==============================="
+	echo
+	echo -e "\t prawa_dostepu [PRAWA] [PLIK1] opcjonalnie: [PLIK2] ... [PLIKn]"
+	echo
+	echo "Skrypt modyfikuje prawa dostepu do pliku dla wskazanych plikow."
+	echo -e "Podaj prawa dostepu w formie numerycznej, a nastepnie pliki/katalogi ktorym te prawa chcesz nadac."
+	echo -e "\a"
+	echo "[PRAWA] - prawa dostepu w formie liczby trzycyfrowej (szczegoly -> man chmod)"
+	echo "[PLIK1...n] - kolejne dowolne pliki lub katalogi, dla ktorych chcesz zmodyfikowac prawa dostepu"
+	exit 1
+}
+
+errorsCount=0
+successesCount=0
+
+echo "========================= Nadawanie praw plikom i katalogom  ========================="
+echo
+if [ -z $1 ] || [ -z $2 ];
+then
+	showMonit 1
+elif [[ $1 =~ ^[01234567][01234567][01234567] ]] ;
+then
+	for i in $@;
+	do
+		if [ $i != $1 ];
+		then
+		fileName=$i
+
+		if [ -e $fileName ];
+		then
+			chmod $1 $fileName 2>/dev/null
+			if [ $? = 0 ] ;
+			then
+				((successesCount+=1))
+				echo "Modyfikuje \"$fileName\": Nadano prawa."
+			else 
+				((errorsCount+=1))
+				echo  "Modyfikuje \"$fileName\": Brak dostepu!"
+			fi
+		else
+			((errorsCount+=1))
+			echo  "Modyfikuje \"$fileName\": Brak dostepu lub plik/katalog nie istnieje!"
+		fi
+		fi
+	done
+else
+	showMonit 2
+fi
+
+
+echo
+echo "Wykonano."
+echo "Zmodyfikowano prawa dostepu do $successesCount plikow."
+echo "Modyfikacja nie powiodla sie dla $errorsCount plikow."
+exit 0
