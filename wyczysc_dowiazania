@@ -23,7 +23,7 @@ function showMonit()
 	exit 1
 }
 
-echo "===========================  Scalanie plikow  ==========================="
+echo "========================= Usuwanie dowiazan symbolicznych =========================="
 echo
 if [ -z $1 ] || [ -z $2 ]; then
 	showMonit 1
